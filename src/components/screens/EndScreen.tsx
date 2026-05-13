@@ -7,10 +7,12 @@ import { localLeaderboard } from '../../services/leaderboardService';
 import { supabaseLeaderboard } from '../../services/supabaseLeaderboardService';
 
 export default function EndScreen() {
-  const score     = useGameStore(s => s.score);
-  const resetGame = useGameStore(s => s.resetGame);
+  const score             = useGameStore(s => s.score);
+  const resetGame         = useGameStore(s => s.resetGame);
+  const selectedDifficulty = useGameStore(s => s.selectedDifficulty);
   const { user, username } = useAuthStore();
 
+  const diffId     = selectedDifficulty.id;
   const isLoggedIn = Boolean(user && username);
   const service    = isLoggedIn ? supabaseLeaderboard : localLeaderboard;
 
@@ -21,8 +23,8 @@ export default function EndScreen() {
 
   useEffect(() => {
     if (isLoggedIn && username) {
-      service.addEntry(username, score)
-        .then(() => service.getTopEntries(10))
+      service.addEntry(username, score, diffId)
+        .then(() => service.getTopEntries(10, diffId))
         .then(top => {
           setEntries(top);
           setSaved(true);
@@ -35,8 +37,8 @@ export default function EndScreen() {
   const handleSave = async (): Promise<void> => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    await service.addEntry(trimmed, score);
-    setEntries(await service.getTopEntries(10));
+    await service.addEntry(trimmed, score, diffId);
+    setEntries(await service.getTopEntries(10, diffId));
     setSaved(true);
   };
 
@@ -78,7 +80,9 @@ export default function EndScreen() {
         </div>
       ) : (
         <div style={tableWrapStyle}>
-          <p style={promptStyle}>{isLoggedIn ? 'Global Top 10' : 'Local Top 10'}</p>
+          <p style={promptStyle}>
+            {selectedDifficulty.label} Top 10 — {selectedDifficulty.difficulty}
+          </p>
           <table style={tableStyle}>
             <thead>
               <tr>

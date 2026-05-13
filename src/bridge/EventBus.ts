@@ -59,4 +59,7 @@ export const EVENTS = {
 
   // A swap was attempted but produced no match — blocks should snap back
   INVALID_SWAP: 'invalid_swap',
+
+  // Timer tick — emitted by Phaser every second when a timed mode is active
+  TIME_UPDATE: 'time_update',
 } as const;

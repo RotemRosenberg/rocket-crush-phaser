@@ -62,6 +62,7 @@ export interface MatchResult {
 // Top-level state machine — controls which screen/mode is active
 export enum GameState {
   MENU = 'MENU',
+  PLANET_SELECT = 'PLANET_SELECT',
   PLAYING = 'PLAYING',
   ANIMATING = 'ANIMATING', // input is blocked while animations run
   GAME_OVER = 'GAME_OVER',

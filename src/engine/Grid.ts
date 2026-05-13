@@ -2,12 +2,11 @@ import type { Cell, Grid as GridData, Position } from '../types';
 import { RocketType } from '../types';
 import { GRID_COLS, GRID_ROWS, ROCKET_TYPES } from '../config/constants';
 
-// All five RocketType values as an array so we can pick one randomly by index
+// All RocketType values as an ordered array — colorCount slices the first N
 const ALL_TYPES: RocketType[] = Object.values(RocketType) as RocketType[];
 
-// Pick a random RocketType
-function randomType(): RocketType {
-  return ALL_TYPES[Math.floor(Math.random() * ROCKET_TYPES)];
+function randomType(colorCount: number = ROCKET_TYPES): RocketType {
+  return ALL_TYPES[Math.floor(Math.random() * Math.min(colorCount, ALL_TYPES.length))];
 }
 
 export class Grid {
@@ -22,24 +21,21 @@ export class Grid {
     this.cells = [];
   }
 
-  // Fill the board with random types, then remove any pre-existing Line-3 matches
-  // by re-rolling each offending cell until no horizontal or vertical run of 3 exists
-  initialize(): void {
-    // Step 1: fill every cell with a random type
+  // Fill the board with random types (using the first colorCount colors),
+  // then remove any pre-existing Line-3 matches by re-rolling offending cells.
+  initialize(colorCount: number = ROCKET_TYPES): void {
     this.cells = Array.from({ length: this.rows }, (_, row) =>
       Array.from({ length: this.cols }, (_, col) => ({
-        type: randomType(),
+        type: randomType(colorCount),
         row,
         col,
       }))
     );
 
-    // Step 2: fix any cell that completes a run of 3 in either direction
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
-        // Keep re-rolling this cell until it doesn't create a horizontal or vertical triple
         while (this.wouldMatchAt(row, col)) {
-          this.cells[row][col].type = randomType();
+          this.cells[row][col].type = randomType(colorCount);
         }
       }
     }

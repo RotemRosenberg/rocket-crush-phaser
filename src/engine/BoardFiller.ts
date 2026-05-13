@@ -6,8 +6,8 @@ import { MatchFinder } from './MatchFinder';
 
 const ALL_TYPES: RocketType[] = Object.values(RocketType) as RocketType[];
 
-function randomType(): RocketType {
-  return ALL_TYPES[Math.floor(Math.random() * ROCKET_TYPES)];
+function randomType(colorCount: number = ROCKET_TYPES): RocketType {
+  return ALL_TYPES[Math.floor(Math.random() * Math.min(colorCount, ALL_TYPES.length))];
 }
 
 // Fisher-Yates in-place shuffle
@@ -24,7 +24,7 @@ export class BoardFiller {
   // Fill every null cell in the grid with a random RocketType.
   // Null cells are always at the top of their columns after gravity has run,
   // so the returned entries represent new blocks entering from the top.
-  fill(grid: Grid): { position: Position; type: RocketType }[] {
+  fill(grid: Grid, colorCount: number = ROCKET_TYPES): { position: Position; type: RocketType }[] {
     const newCells: { position: Position; type: RocketType }[] = [];
     const { rows, cols } = grid;
 
@@ -33,7 +33,7 @@ export class BoardFiller {
         const cell = grid.getCell(r, c);
         if (!cell || cell.type !== null) continue;
 
-        const type = randomType();
+        const type = randomType(colorCount);
         grid.setCell(r, c, type);
         newCells.push({ position: { row: r, col: c }, type });
       }
@@ -42,10 +42,7 @@ export class BoardFiller {
     return newCells;
   }
 
-  // Re-randomize the board when no valid moves remain.
-  // Tries to preserve the current color counts so the visual ratio stays similar.
-  // Retries until the result has no pre-existing matches AND at least one valid move.
-  reshuffleBoard(grid: Grid): void {
+  reshuffleBoard(grid: Grid, colorCount: number = ROCKET_TYPES): void {
     const { rows, cols } = grid;
 
     // Count how many of each color currently exist on the board
@@ -65,9 +62,8 @@ export class BoardFiller {
       for (let i = 0; i < count; i++) pool.push(type);
     });
 
-    // If any cells were null (shouldn't happen during a reshuffle but just in case), pad randomly
     while (pool.length < rows * cols) {
-      pool.push(randomType());
+      pool.push(randomType(colorCount));
     }
 
     const MAX_ATTEMPTS = 100;
@@ -89,11 +85,8 @@ export class BoardFiller {
       if (noMatches && hasMoves) return;
     }
 
-    // Fallback: re-initialize from scratch.
-    // initialize() avoids pre-existing matches; we add the valid-move check here
-    // to satisfy the same guarantee as the loop above.
     do {
-      grid.initialize();
+      grid.initialize(colorCount);
     } while (!this.finder.hasAnyValidMove(grid));
   }
 }

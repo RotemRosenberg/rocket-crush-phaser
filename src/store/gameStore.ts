@@ -1,34 +1,31 @@
 import { create } from 'zustand';
 import { GameState } from '../types';
-import { MAX_MOVES } from '../config/constants';
 import { eventBus, EVENTS } from '../bridge/EventBus';
+import { type DifficultyConfig, DEFAULT_DIFFICULTY } from '../config/difficultyConfig';
 
 interface GameStore {
   score: number;
   movesRemaining: number;
+  timeRemaining: number | null;
   gameState: GameState;
   lastMatchScore: number;
+  selectedDifficulty: DifficultyConfig;
 
   addScore: (points: number) => void;
   decrementMoves: () => void;
+  setTimeRemaining: (t: number) => void;
   setGameState: (state: GameState) => void;
-
-  // Reset state and return to the Main Menu (used by "Play Again" on EndScreen)
+  startGame: (config?: DifficultyConfig) => void;
   resetGame: () => void;
-
-  // Reset state and jump straight into a game (used by "Play" on MainMenu)
-  startGame: () => void;
 }
 
-const INITIAL = {
-  score: 0,
-  movesRemaining: MAX_MOVES,
-  lastMatchScore: 0,
-};
-
 export const useGameStore = create<GameStore>((set) => ({
-  ...INITIAL,
+  score: 0,
+  movesRemaining: DEFAULT_DIFFICULTY.maxMoves,
+  timeRemaining: null,
+  lastMatchScore: 0,
   gameState: GameState.MENU,
+  selectedDifficulty: DEFAULT_DIFFICULTY,
 
   addScore: (points) =>
     set((state) => ({ score: state.score + points, lastMatchScore: points })),
@@ -42,13 +39,29 @@ export const useGameStore = create<GameStore>((set) => ({
       };
     }),
 
+  setTimeRemaining: (t) => set({ timeRemaining: t }),
+
   setGameState: (gameState) => set({ gameState }),
 
-  // Go back to the menu with a clean slate — MainMenu will show fresh best score
-  resetGame: () => set({ ...INITIAL, gameState: GameState.MENU }),
+  startGame: (config = DEFAULT_DIFFICULTY) =>
+    set({
+      score: 0,
+      lastMatchScore: 0,
+      movesRemaining: config.maxMoves,
+      timeRemaining: config.timeLimit,
+      selectedDifficulty: config,
+      gameState: GameState.PLAYING,
+    }),
 
-  // Fresh state + skip the menu and go straight to the game
-  startGame: () => set({ ...INITIAL, gameState: GameState.PLAYING }),
+  // Play Again returns to planet select so the player can choose again
+  resetGame: () =>
+    set({
+      score: 0,
+      lastMatchScore: 0,
+      movesRemaining: DEFAULT_DIFFICULTY.maxMoves,
+      timeRemaining: null,
+      gameState: GameState.PLANET_SELECT,
+    }),
 }));
 
 // ── EventBus wiring ──────────────────────────────────────────────────────────
@@ -69,5 +82,9 @@ export function initListeners(): void {
 
   eventBus.on(EVENTS.GAME_OVER, () => {
     useGameStore.getState().setGameState(GameState.GAME_OVER);
+  });
+
+  eventBus.on(EVENTS.TIME_UPDATE, (remaining: number) => {
+    useGameStore.getState().setTimeRemaining(remaining);
   });
 }

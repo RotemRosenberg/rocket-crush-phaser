@@ -13,8 +13,9 @@ import { beamAnim } from '../animations/BeamAnim';
 import { eventBus, EVENTS } from '../../bridge/EventBus';
 import {
   CELL_SIZE, GRID_ROWS, GRID_COLS,
-  ANIMATION_DURATION, INVALID_ANIM_DURATION, FALL_DURATION, MAX_MOVES,
+  ANIMATION_DURATION, INVALID_ANIM_DURATION, FALL_DURATION,
 } from '../../config/constants';
+import { useGameStore } from '../../store/gameStore';
 
 // 10 px is enough movement to commit to a drag direction without causing accidental
 // swaps from taps (fingers land and lift with a tiny natural drift).
@@ -47,7 +48,10 @@ export class GameScene extends Phaser.Scene {
 
   private isAnimating = false;
   private score = 0;
-  private movesRemaining = MAX_MOVES;
+  private movesRemaining = 20;
+  private colorCount = 5;
+  private timeRemaining: number | null = null;
+  private timeAccumulator = 0;
 
   // Tap-Tap state (desktop)
   private selectedCell: Position | null = null;
@@ -69,16 +73,20 @@ export class GameScene extends Phaser.Scene {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   create(): void {
-    this.createStarfield(); // must run before gridDisplay so depth ordering is correct
+    // Read difficulty config from the store
+    const difficulty = useGameStore.getState().selectedDifficulty;
+    this.colorCount     = difficulty.colorCount;
+    this.movesRemaining = difficulty.maxMoves;
+    this.timeRemaining  = difficulty.timeLimit;
+    this.timeAccumulator = 0;
+
+    this.createStarfield();
 
     this.grid = new Grid();
-    this.matchFinder = new MatchFinder(); // created first so the validity loop can use it
+    this.matchFinder = new MatchFinder();
 
-    // GDD requirement: board must start with at least one valid move.
-    // initialize() only avoids pre-existing matches, not the valid-move guarantee.
-    // This loop almost always exits on the first iteration.
     do {
-      this.grid.initialize();
+      this.grid.initialize(this.colorCount);
     } while (!this.matchFinder.hasAnyValidMove(this.grid));
 
     this.gridDisplay = new GridDisplay();
@@ -126,17 +134,29 @@ export class GameScene extends Phaser.Scene {
 
   // ── Per-frame update ──────────────────────────────────────────────────────
 
-  // delta is the ms since the last frame; dividing by 16.67 normalises to 60 fps
   update(_time: number, delta: number): void {
     const factor = delta / 16.67;
     const { width, height } = this.scale;
 
+    // Starfield scroll
     for (const star of this.stars) {
       star.arc.y += star.speed * factor;
       if (star.arc.y > height + 4) {
-        // Wrap to a random x at the top so the stream stays dense
         star.arc.y = -4;
         star.arc.x = Math.random() * width;
+      }
+    }
+
+    // Countdown timer (Mars / Black Hole modes)
+    if (this.timeRemaining !== null && this.timeRemaining > 0) {
+      this.timeAccumulator += delta;
+      if (this.timeAccumulator >= 1000) {
+        this.timeAccumulator -= 1000;
+        this.timeRemaining = Math.max(0, this.timeRemaining - 1);
+        eventBus.emit(EVENTS.TIME_UPDATE, this.timeRemaining);
+        if (this.timeRemaining === 0) {
+          eventBus.emit(EVENTS.GAME_OVER);
+        }
       }
     }
   }
@@ -327,7 +347,7 @@ export class GameScene extends Phaser.Scene {
       await this.animateFalling(movements);
 
       // Fill empty cells at the top, animate them entering from above
-      const newCells = boardFiller.fill(this.grid);
+      const newCells = boardFiller.fill(this.grid, this.colorCount);
       await this.animateEntering(newCells);
 
       // Cascade LINE4s have no specific player origin
@@ -348,7 +368,7 @@ export class GameScene extends Phaser.Scene {
 
     // If no valid move exists after processing, reshuffle the board (free move)
     if (!this.matchFinder.hasAnyValidMove(this.grid)) {
-      boardFiller.reshuffleBoard(this.grid);
+      boardFiller.reshuffleBoard(this.grid, this.colorCount);
       this.gridDisplay.updateFromGrid(this.grid.toArray());
       eventBus.emit(EVENTS.BOARD_RESHUFFLE);
     }
