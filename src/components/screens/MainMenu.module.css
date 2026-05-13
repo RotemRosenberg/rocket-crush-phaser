@@ -90,18 +90,20 @@
 
 .planetName {
   margin-top: 8px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #c5d8ff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #d8eaff;
   letter-spacing: 0.1em;
   white-space: nowrap;
+  text-shadow: 0 0 8px rgba(91,143,255,0.4);
 }
 
 .diffName {
-  font-size: 0.58rem;
-  color: #5b6a8f;
+  font-size: 0.72rem;
+  color: #7c90b8;
   letter-spacing: 0.16em;
-  margin-top: 2px;
+  font-weight: 600;
+  margin-top: 3px;
 }
 
 .bestBadge {

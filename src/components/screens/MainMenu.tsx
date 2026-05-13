@@ -129,21 +129,44 @@ export default function MainMenu() {
           preserveAspectRatio="none"
           className={styles.pathSvg}
         >
-          {/* Glow layer */}
+          <defs>
+            <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="0.8" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Wide soft glow */}
           <polyline
             points={SVG_POINTS}
             fill="none"
-            stroke="rgba(91,143,255,0.08)"
-            strokeWidth="1.5"
+            stroke="rgba(91,143,255,0.12)"
+            strokeWidth="2.5"
+            filter="url(#lineGlow)"
           />
-          {/* Dashed path */}
+          {/* Solid core line */}
           <polyline
             points={SVG_POINTS}
             fill="none"
-            stroke="rgba(91,143,255,0.35)"
-            strokeWidth="0.4"
-            strokeDasharray="2,1.8"
+            stroke="rgba(160,196,255,0.55)"
+            strokeWidth="0.5"
           />
+          {/* Dashed overlay for depth */}
+          <polyline
+            points={SVG_POINTS}
+            fill="none"
+            stroke="rgba(255,255,255,0.18)"
+            strokeWidth="0.3"
+            strokeDasharray="1,3"
+          />
+          {/* Waypoint dots at each planet */}
+          {POSITIONS.map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r="0.7" fill="rgba(160,196,255,0.5)" />
+          ))}
         </svg>
 
         {/* Planets */}
