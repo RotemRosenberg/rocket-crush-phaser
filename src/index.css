@@ -1,0 +1,43 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* Prevent accidental text selection during gameplay */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable selection inside form fields (e.g. EndScreen name input) */
+input,
+textarea,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: #0a0a1a;
+  overflow: hidden;
+  /* Disable pull-to-refresh and elastic overscroll on all platforms */
+  overscroll-behavior: none;
+}
+
+#root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Game canvas — suppress every default touch behaviour so Phaser owns all touch events.
+   touch-action: none  → no scroll / zoom / double-tap-zoom from the OS gesture layer.
+   -webkit-tap-highlight-color → removes the blue tap flash on Android Chrome. */
+canvas {
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Keep the cursor a pointer so desktop users get a hand on hover */
+  cursor: pointer;
+}

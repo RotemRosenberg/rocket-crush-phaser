@@ -1,0 +1,26 @@
+/* Own keyframe name (starBlink) avoids conflicts with any other module's @keyframes */
+:global(@keyframes starBlink) {
+  0%, 100% { opacity: 0.07; transform: scale(1);   }
+  50%       { opacity: 1;    transform: scale(1.5); }
+}
+
+/* Fixed full-viewport layer — always behind everything else */
+.bg {
+  position: fixed;
+  inset: 0;
+  background: #0a0a1a;
+  overflow: hidden;
+  pointer-events: none; /* never blocks clicks on screens above it */
+  z-index: 0;
+}
+
+.star {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 50%;
+  animation-name: starBlink;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-duration: var(--dur, 3s);
+  animation-delay:    var(--dly, 0s);
+}

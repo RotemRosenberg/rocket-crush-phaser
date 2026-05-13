@@ -1,0 +1,139 @@
+/* ── Keyframes ───────────────────────────────────────────────────────────────
+   Declared global so animation-name references work reliably in CSS modules.  */
+:global(@keyframes twinkle) {
+  0%, 100% { opacity: 0.08; transform: scale(1);    }
+  50%       { opacity: 1;    transform: scale(1.4);  }
+}
+
+:global(@keyframes titlePulse) {
+  0%, 100% { text-shadow:
+    0 0 10px rgba(110, 170, 255, 0.6),
+    0 0 30px rgba(110, 170, 255, 0.3),
+    0 0 60px rgba(110, 170, 255, 0.2); }
+  50%       { text-shadow:
+    0 0 14px rgba(140, 200, 255, 0.9),
+    0 0 40px rgba(110, 170, 255, 0.5),
+    0 0 80px rgba(110, 170, 255, 0.3); }
+}
+
+:global(@keyframes btnGlow) {
+  0%, 100% { box-shadow:
+    0 0 12px rgba(91, 143, 255, 0.5),
+    inset 0 0 12px rgba(91, 143, 255, 0.08); }
+  50%       { box-shadow:
+    0 0 24px rgba(91, 143, 255, 0.8),
+    inset 0 0 24px rgba(91, 143, 255, 0.15); }
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* No background — SpaceBackground in App.tsx fills the space behind this */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: system-ui, 'Segoe UI', sans-serif;
+}
+
+/* Transparent overlay so stars render behind all content */
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+  padding: 40px 24px;
+}
+
+/* ── Stars ───────────────────────────────────────────────────────────────── */
+
+.star {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 50%;
+  animation-name: twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  /* duration and delay are injected as CSS variables from JSX */
+  animation-duration: var(--anim-dur, 3s);
+  animation-delay: var(--anim-delay, 0s);
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+
+.title {
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #e8eeff;
+  animation: titlePulse 4s ease-in-out infinite;
+  user-select: none;
+}
+
+.subtitle {
+  font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+  color: #7c85a2;
+  letter-spacing: 0.12em;
+  margin-top: -12px;
+}
+
+/* ── Best Score ──────────────────────────────────────────────────────────── */
+
+.bestScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 32px;
+  border: 1px solid rgba(91, 143, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(91, 143, 255, 0.06);
+}
+
+.bestLabel {
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  color: #5b6a8f;
+  font-weight: 600;
+}
+
+.bestValue {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #a0c4ff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(91, 143, 255, 0.45);
+  line-height: 1;
+}
+
+/* ── Play Button ─────────────────────────────────────────────────────────── */
+
+.playBtn {
+  margin-top: 12px;
+  padding: 16px 60px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #7db8ff;
+  background: rgba(91, 143, 255, 0.08);
+  border: 2px solid rgba(91, 143, 255, 0.6);
+  border-radius: 6px;
+  cursor: pointer;
+  animation: btnGlow 3s ease-in-out infinite;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.playBtn:hover {
+  transform: scale(1.06);
+  background: rgba(91, 143, 255, 0.18);
+}
+
+.playBtn:active {
+  transform: scale(0.97);
+}
