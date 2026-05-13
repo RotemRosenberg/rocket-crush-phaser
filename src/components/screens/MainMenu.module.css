@@ -1,139 +1,214 @@
-/* ── Keyframes ───────────────────────────────────────────────────────────────
-   Declared global so animation-name references work reliably in CSS modules.  */
-:global(@keyframes twinkle) {
-  0%, 100% { opacity: 0.08; transform: scale(1);    }
-  50%       { opacity: 1;    transform: scale(1.4);  }
+:global(@keyframes selRingPulse) {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1);    }
+  50%       { opacity: 1;    transform: translate(-50%, -50%) scale(1.06); }
 }
 
-:global(@keyframes titlePulse) {
-  0%, 100% { text-shadow:
-    0 0 10px rgba(110, 170, 255, 0.6),
-    0 0 30px rgba(110, 170, 255, 0.3),
-    0 0 60px rgba(110, 170, 255, 0.2); }
-  50%       { text-shadow:
-    0 0 14px rgba(140, 200, 255, 0.9),
-    0 0 40px rgba(110, 170, 255, 0.5),
-    0 0 80px rgba(110, 170, 255, 0.3); }
+:global(@keyframes rocketLaunch) {
+  0%   { transform: translate(-50%, -50%) scale(1)   rotate(-45deg); opacity: 1; }
+  60%  { transform: translate(-50%, -50%) scale(1.4) rotate(-45deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0)   rotate(-45deg); opacity: 0; }
 }
 
-:global(@keyframes btnGlow) {
-  0%, 100% { box-shadow:
-    0 0 12px rgba(91, 143, 255, 0.5),
-    inset 0 0 12px rgba(91, 143, 255, 0.08); }
-  50%       { box-shadow:
-    0 0 24px rgba(91, 143, 255, 0.8),
-    inset 0 0 24px rgba(91, 143, 255, 0.15); }
+:global(@keyframes titleGlow) {
+  0%, 100% { text-shadow: 0 0 12px rgba(110,170,255,0.5), 0 0 30px rgba(110,170,255,0.25); }
+  50%       { text-shadow: 0 0 18px rgba(140,200,255,0.8), 0 0 45px rgba(110,170,255,0.4); }
 }
 
-/* ── Layout ──────────────────────────────────────────────────────────────── */
+/* ── Layout ─────────────────────────────────────────────────────────── */
 
 .container {
-  position: relative;
   width: 100%;
   height: 100%;
-  /* No background — SpaceBackground in App.tsx fills the space behind this */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  font-family: system-ui, 'Segoe UI', sans-serif;
-}
-
-/* Transparent overlay so stars render behind all content */
-.content {
-  position: relative;
-  z-index: 1;
   display: flex;
   flex-direction: column;
+  font-family: system-ui, 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────── */
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  text-align: center;
-  padding: 40px 24px;
+  padding: 14px 20px;
+  flex-shrink: 0;
+  background: rgba(5,5,20,0.7);
+  border-bottom: 1px solid rgba(91,143,255,0.12);
+  backdrop-filter: blur(6px);
 }
-
-/* ── Stars ───────────────────────────────────────────────────────────────── */
-
-.star {
-  position: absolute;
-  background: #ffffff;
-  border-radius: 50%;
-  animation-name: twinkle;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  /* duration and delay are injected as CSS variables from JSX */
-  animation-duration: var(--anim-dur, 3s);
-  animation-delay: var(--anim-delay, 0s);
-}
-
-/* ── Title ───────────────────────────────────────────────────────────────── */
 
 .title {
-  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  font-size: clamp(1.1rem, 3.5vw, 1.7rem);
   font-weight: 900;
-  letter-spacing: 0.06em;
   color: #e8eeff;
-  animation: titlePulse 4s ease-in-out infinite;
-  user-select: none;
+  margin: 0;
+  letter-spacing: 0.08em;
+  animation: titleGlow 4s ease-in-out infinite;
 }
 
 .subtitle {
-  font-size: clamp(0.9rem, 2.5vw, 1.15rem);
-  color: #7c85a2;
-  letter-spacing: 0.12em;
-  margin-top: -12px;
+  font-size: 0.6rem;
+  color: #5b6a8f;
+  letter-spacing: 0.2em;
+  margin: 3px 0 0;
 }
 
-/* ── Best Score ──────────────────────────────────────────────────────────── */
+/* ── Map area ─────────────────────────────────────────────────────────── */
 
-.bestScore {
+.mapArea {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.pathSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ── Planet node ─────────────────────────────────────────────────────── */
+
+.planetNode {
+  position: absolute;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 12px 32px;
-  border: 1px solid rgba(91, 143, 255, 0.25);
-  border-radius: 10px;
-  background: rgba(91, 143, 255, 0.06);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.bestLabel {
-  font-size: 0.65rem;
-  letter-spacing: 0.22em;
+.planetNode:hover .planet {
+  filter: brightness(1.15);
+}
+
+.planet {
+  border-radius: 50%;
+  transition: box-shadow 0.3s ease, filter 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Pulsing selection ring */
+.selRing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.6);
+  pointer-events: none;
+  animation: selRingPulse 1.8s ease-in-out infinite;
+}
+
+.planetName {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #c5d8ff;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.diffName {
+  font-size: 0.58rem;
+  color: #5b6a8f;
+  letter-spacing: 0.16em;
+  margin-top: 2px;
+}
+
+.bestBadge {
+  margin-top: 3px;
+  font-size: 0.6rem;
+  color: #f0c040;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+/* ── Rocket ──────────────────────────────────────────────────────────── */
+
+.rocket {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 2rem;
+  filter: drop-shadow(0 0 8px rgba(91,143,255,0.7));
+  z-index: 20;
+  pointer-events: auto;
+  touch-action: none;
+  will-change: left, top;
+}
+
+.rocketLaunch {
+  animation: rocketLaunch 0.5s ease-in forwards;
+  pointer-events: none;
+}
+
+/* ── Info panel ──────────────────────────────────────────────────────── */
+
+.infoPanel {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px 18px;
+  background: rgba(5,5,20,0.88);
+  border-top: 1px solid rgba(91,143,255,0.12);
+  backdrop-filter: blur(6px);
+}
+
+.stats {
+  display: flex;
+  gap: clamp(12px, 4vw, 32px);
+  align-items: center;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.statLabel {
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
   color: #5b6a8f;
   font-weight: 600;
 }
 
-.bestValue {
-  font-size: 1.9rem;
+.statValue {
+  font-size: 1rem;
   font-weight: 700;
   color: #a0c4ff;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 12px rgba(91, 143, 255, 0.45);
-  line-height: 1;
 }
 
-/* ── Play Button ─────────────────────────────────────────────────────────── */
+/* ── Launch button ───────────────────────────────────────────────────── */
 
-.playBtn {
-  margin-top: 12px;
-  padding: 16px 60px;
-  font-size: 1.3rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: #7db8ff;
-  background: rgba(91, 143, 255, 0.08);
-  border: 2px solid rgba(91, 143, 255, 0.6);
+.launchBtn {
+  padding: 11px 36px;
+  background: rgba(91,143,255,0.10);
+  border: 2px solid rgba(91,143,255,0.6);
   border-radius: 6px;
+  color: #7db8ff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
   cursor: pointer;
-  animation: btnGlow 3s ease-in-out infinite;
-  transition: transform 0.15s ease, background 0.2s ease;
+  box-shadow: 0 0 14px rgba(91,143,255,0.3);
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
 }
 
-.playBtn:hover {
-  transform: scale(1.06);
-  background: rgba(91, 143, 255, 0.18);
-}
+.launchBtn:hover  { background: rgba(91,143,255,0.2); transform: scale(1.04); }
+.launchBtn:active { transform: scale(0.97); }
 
-.playBtn:active {
-  transform: scale(0.97);
+.launching {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }

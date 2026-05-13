@@ -53,14 +53,13 @@ export const useGameStore = create<GameStore>((set) => ({
       gameState: GameState.PLAYING,
     }),
 
-  // Play Again returns to planet select so the player can choose again
   resetGame: () =>
     set({
       score: 0,
       lastMatchScore: 0,
       movesRemaining: DEFAULT_DIFFICULTY.maxMoves,
       timeRemaining: null,
-      gameState: GameState.PLANET_SELECT,
+      gameState: GameState.MENU,
     }),
 }));
 

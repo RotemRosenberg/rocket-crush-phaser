@@ -10,10 +10,8 @@ export default function AppRouter() {
 
   switch (gameState) {
     case GameState.MENU:
-      return <MainMenu />;
-
     case GameState.PLANET_SELECT:
-      return <PlanetSelect />;
+      return <MainMenu />;
 
     case GameState.PLAYING:
     case GameState.ANIMATING:
