@@ -159,14 +159,6 @@ export default function MainMenu() {
               style={{ left: `${px}%`, top: `${py}%` }}
               onClick={() => handlePlanetClick(idx)}
             >
-              {/* Selection ring */}
-              {isSelected && (
-                <div
-                  className={styles.selRing}
-                  style={{ width: sz + 20, height: sz + 20 }}
-                />
-              )}
-
               {/* Planet sphere */}
               <div
                 className={styles.planet}
