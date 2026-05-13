@@ -1,20 +1,32 @@
 import type { CSSProperties } from 'react';
 import styles from './SpaceBackground.module.css';
 
-// Star positions are fixed for the session (computed once at module load time)
-const STARS = Array.from({ length: 120 }, () => ({
-  left:  `${(Math.random() * 100).toFixed(2)}%`,
-  top:   `${(Math.random() * 100).toFixed(2)}%`,
-  size:  `${(Math.random() * 2.2 + 0.8).toFixed(1)}px`,
-  dur:   `${(Math.random() * 5 + 2).toFixed(1)}s`,
-  delay: `${(Math.random() * 7).toFixed(1)}s`,
+// Three depth layers — far stars are small/dim/slow, near stars are large/bright/fast
+const FAR   = Array.from({ length: 70 }, () => makestar(0.6, 1.1, 5, 9, 0.04, 0.18));
+const MID   = Array.from({ length: 55 }, () => makestar(1.0, 1.8, 3, 6, 0.12, 0.35));
+const NEAR  = Array.from({ length: 30 }, () => makestar(1.6, 3.0, 2, 4, 0.25, 0.60));
+const SHOOT = Array.from({ length: 4  }, (_, i) => ({
+  top:   `${10 + i * 18}%`,
+  delay: `${4 + i * 7}s`,
+  dur:   `${1.0 + i * 0.3}s`,
 }));
 
-// Full-screen fixed starfield — render once in App.tsx, visible behind every screen
+function makestar(minSz: number, maxSz: number, minD: number, maxD: number, minA: number, maxA: number) {
+  return {
+    left:  `${(Math.random() * 100).toFixed(2)}%`,
+    top:   `${(Math.random() * 100).toFixed(2)}%`,
+    size:  `${(minSz + Math.random() * (maxSz - minSz)).toFixed(1)}px`,
+    dur:   `${(minD  + Math.random() * (maxD  - minD )).toFixed(1)}s`,
+    delay: `${(Math.random() * 8).toFixed(1)}s`,
+    alpha: `${(minA  + Math.random() * (maxA  - minA )).toFixed(2)}`,
+    blue:  Math.random() < 0.2,
+  };
+}
+
 export default function SpaceBackground() {
   return (
     <div className={styles.bg}>
-      {STARS.map((s, i) => (
+      {[...FAR, ...MID, ...NEAR].map((s, i) => (
         <div
           key={i}
           className={styles.star}
@@ -25,7 +37,17 @@ export default function SpaceBackground() {
             height: s.size,
             '--dur': s.dur,
             '--dly': s.delay,
+            '--alpha': s.alpha,
+            background: s.blue ? '#b8d8ff' : '#ffffff',
           } as CSSProperties}
+        />
+      ))}
+
+      {SHOOT.map((s, i) => (
+        <div
+          key={`shoot-${i}`}
+          className={styles.shootingStar}
+          style={{ '--shoot-top': s.top, '--shoot-delay': s.delay, '--shoot-dur': s.dur } as CSSProperties}
         />
       ))}
     </div>

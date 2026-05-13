@@ -1,6 +1,7 @@
 import { useGameStore } from '../store/gameStore';
 import { GameState } from '../types';
 import MainMenu from './screens/MainMenu';
+import PlanetSelect from './screens/PlanetSelect';
 import GameScreen from './screens/GameScreen';
 import EndScreen from './screens/EndScreen';
 
@@ -10,6 +11,9 @@ export default function AppRouter() {
   switch (gameState) {
     case GameState.MENU:
       return <MainMenu />;
+
+    case GameState.PLANET_SELECT:
+      return <PlanetSelect />;
 
     case GameState.PLAYING:
     case GameState.ANIMATING:

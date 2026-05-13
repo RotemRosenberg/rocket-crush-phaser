@@ -1,26 +1,46 @@
-/* Own keyframe name (starBlink) avoids conflicts with any other module's @keyframes */
 :global(@keyframes starBlink) {
-  0%, 100% { opacity: 0.07; transform: scale(1);   }
-  50%       { opacity: 1;    transform: scale(1.5); }
+  0%, 100% { opacity: var(--alpha, 0.1); transform: scale(1);    }
+  50%       { opacity: 1;                transform: scale(1.6);  }
 }
 
-/* Fixed full-viewport layer — always behind everything else */
+:global(@keyframes shootingStar) {
+  0%   { transform: translateX(0)     translateY(0)    scaleX(1);   opacity: 0; }
+  5%   { opacity: 0.9; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateX(60vw) translateY(30vh) scaleX(0.2); opacity: 0; }
+}
+
 .bg {
   position: fixed;
   inset: 0;
-  background: #0a0a1a;
+  background: radial-gradient(ellipse at 50% 0%, #0d0d2b 0%, #06060f 70%);
   overflow: hidden;
-  pointer-events: none; /* never blocks clicks on screens above it */
+  pointer-events: none;
   z-index: 0;
 }
 
 .star {
   position: absolute;
-  background: #ffffff;
   border-radius: 50%;
   animation-name: starBlink;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
-  animation-duration: var(--dur, 3s);
+  animation-duration: var(--dur, 4s);
   animation-delay:    var(--dly, 0s);
+}
+
+.shootingStar {
+  position: absolute;
+  top:  var(--shoot-top, 20%);
+  left: -2px;
+  width: 90px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 100%);
+  animation-name: shootingStar;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+  animation-duration: var(--shoot-dur, 1.2s);
+  animation-delay:    var(--shoot-delay, 5s);
+  opacity: 0;
 }
