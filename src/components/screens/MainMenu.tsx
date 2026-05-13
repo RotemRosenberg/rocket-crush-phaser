@@ -19,6 +19,37 @@ const POSITIONS: [number, number][] = [
 
 const SVG_POINTS = POSITIONS.map(([x, y]) => `${x},${y}`).join(' ');
 
+// Pre-compute Milky Way stars scattered along the path (computed once at module load)
+interface MWStar { x: number; y: number; r: number; opacity: number; color: string }
+const MILKY_WAY_STARS: MWStar[] = (() => {
+  const stars: MWStar[] = [];
+  const colors = ['#ffffff', '#d0e8ff', '#c4b8ff', '#b8d4ff', '#ffd8f0', '#ffffff', '#ffffff'];
+
+  for (let seg = 0; seg < POSITIONS.length - 1; seg++) {
+    const [x1, y1] = POSITIONS[seg];
+    const [x2, y2] = POSITIONS[seg + 1];
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    // Perpendicular direction for scatter
+    const nx = -dy / len;
+    const ny =  dx / len;
+
+    for (let j = 0; j < 80; j++) {
+      const t       = Math.random();
+      const scatter = (Math.random() - 0.5) * 8; // width of the band
+      stars.push({
+        x:       x1 + dx * t + nx * scatter,
+        y:       y1 + dy * t + ny * scatter,
+        r:       Math.random() * 0.55 + 0.08,
+        opacity: Math.random() * 0.75 + 0.1,
+        color:   colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+  return stars;
+})();
+
 export default function MainMenu() {
   const startGame = useGameStore(s => s.startGame);
   const { user, username } = useAuthStore();
@@ -123,50 +154,44 @@ export default function MainMenu() {
       {/* ── Planet map ────────────────────────────────────────────────── */}
       <div className={styles.mapArea} ref={mapRef}>
 
-        {/* SVG connecting path */}
+        {/* Milky Way path */}
         <svg
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           className={styles.pathSvg}
         >
           <defs>
-            <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="0.8" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
+            <filter id="mwGlow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="1.4" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
 
-          {/* Wide soft glow */}
-          <polyline
-            points={SVG_POINTS}
-            fill="none"
-            stroke="rgba(91,143,255,0.12)"
-            strokeWidth="2.5"
-            filter="url(#lineGlow)"
-          />
-          {/* Solid core line */}
-          <polyline
-            points={SVG_POINTS}
-            fill="none"
-            stroke="rgba(160,196,255,0.55)"
-            strokeWidth="0.5"
-          />
-          {/* Dashed overlay for depth */}
-          <polyline
-            points={SVG_POINTS}
-            fill="none"
-            stroke="rgba(255,255,255,0.18)"
-            strokeWidth="0.3"
-            strokeDasharray="1,3"
-          />
-          {/* Waypoint dots at each planet */}
-          {POSITIONS.map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r="0.7" fill="rgba(160,196,255,0.5)" />
+          {/* Nebula glow — wide purple/violet outer band */}
+          <polyline points={SVG_POINTS} fill="none" stroke="rgba(120,80,200,0.07)"  strokeWidth="14" strokeLinecap="round" />
+          {/* Blue mid band */}
+          <polyline points={SVG_POINTS} fill="none" stroke="rgba(80,130,220,0.09)"  strokeWidth="8"  strokeLinecap="round" />
+          {/* White-blue inner band */}
+          <polyline points={SVG_POINTS} fill="none" stroke="rgba(180,210,255,0.07)" strokeWidth="4"  strokeLinecap="round" />
+
+          {/* Milky Way stars scattered along the band */}
+          {MILKY_WAY_STARS.map((s, i) => (
+            <circle
+              key={i}
+              cx={s.x} cy={s.y} r={s.r}
+              fill={s.color}
+              opacity={s.opacity}
+            />
           ))}
+
+          {/* Bright core thread */}
+          <polyline
+            points={SVG_POINTS}
+            fill="none"
+            stroke="rgba(220,235,255,0.28)"
+            strokeWidth="0.4"
+            filter="url(#mwGlow)"
+          />
         </svg>
 
         {/* Planets */}
