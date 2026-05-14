@@ -17,70 +17,23 @@ const POSITIONS: [number, number][] = [
   [38,  6],   // Black Hole — top center
 ];
 
-const SVG_POINTS = POSITIONS.map(([x, y]) => `${x},${y}`).join(' ');
-
-// Waypoint dots along each segment (at 1/3 and 2/3)
-const WAYPOINTS: { x: number; y: number }[] = (() => {
-  const pts: { x: number; y: number }[] = [];
+// Waypoint markers — small glowing dots along each route segment
+const WAYPOINTS: { x: number; y: number; size: number }[] = (() => {
+  const pts: { x: number; y: number; size: number }[] = [];
   for (let seg = 0; seg < POSITIONS.length - 1; seg++) {
     const [x1, y1] = POSITIONS[seg];
     const [x2, y2] = POSITIONS[seg + 1];
-    for (const t of [1/3, 2/3]) {
-      pts.push({ x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t });
+    // 5 waypoints per segment, evenly spaced
+    for (let i = 1; i <= 5; i++) {
+      const t = i / 6;
+      pts.push({
+        x: x1 + (x2 - x1) * t,
+        y: y1 + (y2 - y1) * t,
+        size: i === 3 ? 0.75 : 0.5, // middle one slightly bigger
+      });
     }
   }
   return pts;
-})();
-
-// Pre-compute stars along the Milky Way path — 3 depth tiers
-interface MWStar { x: number; y: number; r: number; opacity: number; color: string; bright: boolean }
-const MILKY_WAY_STARS: MWStar[] = (() => {
-  const stars: MWStar[] = [];
-  const dustColors  = ['#c4c8ff', '#d0ccff', '#b8c8ff', '#e0dcff'];
-  const brightColors = ['#ffffff', '#eef4ff', '#fff8f0', '#d0e8ff'];
-
-  for (let seg = 0; seg < POSITIONS.length - 1; seg++) {
-    const [x1, y1] = POSITIONS[seg];
-    const [x2, y2] = POSITIONS[seg + 1];
-    const dx = x2 - x1, dy = y2 - y1;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const nx = -dy / len, ny = dx / len;
-
-    // Dust: many tiny faint particles
-    for (let j = 0; j < 55; j++) {
-      const t = Math.random(), s = (Math.random() - 0.5) * 8;
-      stars.push({
-        x: x1 + dx * t + nx * s, y: y1 + dy * t + ny * s,
-        r: Math.random() * 0.13 + 0.04,
-        opacity: Math.random() * 0.25 + 0.08,
-        color: dustColors[Math.floor(Math.random() * dustColors.length)],
-        bright: false,
-      });
-    }
-    // Mid: moderate stars, tighter band
-    for (let j = 0; j < 18; j++) {
-      const t = Math.random(), s = (Math.random() - 0.5) * 5;
-      stars.push({
-        x: x1 + dx * t + nx * s, y: y1 + dy * t + ny * s,
-        r: Math.random() * 0.20 + 0.12,
-        opacity: Math.random() * 0.30 + 0.30,
-        color: dustColors[Math.floor(Math.random() * dustColors.length)],
-        bright: false,
-      });
-    }
-    // Bright: few larger glowing stars
-    for (let j = 0; j < 5; j++) {
-      const t = Math.random(), s = (Math.random() - 0.5) * 3;
-      stars.push({
-        x: x1 + dx * t + nx * s, y: y1 + dy * t + ny * s,
-        r: Math.random() * 0.24 + 0.22,
-        opacity: Math.random() * 0.30 + 0.60,
-        color: brightColors[Math.floor(Math.random() * brightColors.length)],
-        bright: true,
-      });
-    }
-  }
-  return stars;
 })();
 
 export default function MainMenu() {
@@ -187,48 +140,38 @@ export default function MainMenu() {
       {/* ── Planet map ────────────────────────────────────────────────── */}
       <div className={styles.mapArea} ref={mapRef}>
 
-        {/* Milky Way path */}
+        {/* Route map between planets */}
         <svg
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           className={styles.pathSvg}
         >
           <defs>
-            <filter id="brightStar" x="-300%" y="-300%" width="700%" height="700%">
-              <feGaussianBlur stdDeviation="0.22" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-            <filter id="routeGlow" x="-60%" y="-60%" width="220%" height="220%">
-              <feGaussianBlur stdDeviation="0.35" result="blur" />
+            <filter id="waypointGlow" x="-300%" y="-300%" width="700%" height="700%">
+              <feGaussianBlur stdDeviation="0.5" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
 
-          {/* Dust + mid stars — no filter for performance */}
-          {MILKY_WAY_STARS.filter(s => !s.bright).map((s, i) => (
-            <circle key={i} cx={s.x} cy={s.y} r={s.r} fill={s.color} opacity={s.opacity} />
-          ))}
-
-          {/* Bright stars with soft glow */}
-          {MILKY_WAY_STARS.filter(s => s.bright).map((s, i) => (
-            <circle key={`b${i}`} cx={s.x} cy={s.y} r={s.r} fill={s.color} opacity={s.opacity} filter="url(#brightStar)" />
-          ))}
-
-          {/* Route line — thin dashed, screen-space stroke so it stays crisp */}
-          <polyline
-            points={SVG_POINTS}
-            fill="none"
-            stroke="rgba(160,200,255,0.22)"
-            strokeWidth="1"
-            strokeDasharray="5 7"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-            filter="url(#routeGlow)"
-          />
-
-          {/* Waypoint dots at 1/3 and 2/3 of each segment */}
+          {/* Waypoint glow halos (soft) */}
           {WAYPOINTS.map((wp, i) => (
-            <circle key={`wp${i}`} cx={wp.x} cy={wp.y} r="0.5" fill="rgba(160,200,255,0.35)" />
+            <circle
+              key={`g${i}`}
+              cx={wp.x} cy={wp.y}
+              r={wp.size * 2.2}
+              fill="rgba(120,170,255,0.10)"
+            />
+          ))}
+
+          {/* Waypoint dots — sharp bright cores */}
+          {WAYPOINTS.map((wp, i) => (
+            <circle
+              key={`wp${i}`}
+              cx={wp.x} cy={wp.y}
+              r={wp.size}
+              fill="rgba(200,220,255,0.85)"
+              filter="url(#waypointGlow)"
+            />
           ))}
         </svg>
 
