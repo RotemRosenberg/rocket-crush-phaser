@@ -10,40 +10,73 @@ import styles from './MainMenu.module.css';
 
 // Planet positions as [x%, y%] inside the map area — zigzag from bottom to top
 const POSITIONS: [number, number][] = [
-  [18, 80],   // Mercury  — bottom left
-  [66, 63],   // Venus    — center right
-  [22, 46],   // Earth    — center left
-  [68, 28],   // Mars     — upper right
-  [38,  8],   // Black Hole — top center
+  [16, 83],   // Mercury  — bottom left
+  [72, 65],   // Venus    — center right
+  [18, 45],   // Earth    — center left
+  [74, 24],   // Mars     — upper right
+  [38,  6],   // Black Hole — top center
 ];
 
 const SVG_POINTS = POSITIONS.map(([x, y]) => `${x},${y}`).join(' ');
 
-// Pre-compute Milky Way stars scattered along the path (computed once at module load)
-interface MWStar { x: number; y: number; r: number; opacity: number; color: string }
+// Waypoint dots along each segment (at 1/3 and 2/3)
+const WAYPOINTS: { x: number; y: number }[] = (() => {
+  const pts: { x: number; y: number }[] = [];
+  for (let seg = 0; seg < POSITIONS.length - 1; seg++) {
+    const [x1, y1] = POSITIONS[seg];
+    const [x2, y2] = POSITIONS[seg + 1];
+    for (const t of [1/3, 2/3]) {
+      pts.push({ x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t });
+    }
+  }
+  return pts;
+})();
+
+// Pre-compute stars along the Milky Way path — 3 depth tiers
+interface MWStar { x: number; y: number; r: number; opacity: number; color: string; bright: boolean }
 const MILKY_WAY_STARS: MWStar[] = (() => {
   const stars: MWStar[] = [];
-  const colors = ['#ffffff', '#d0e8ff', '#c4b8ff', '#b8d4ff', '#ffd8f0', '#ffffff', '#ffffff'];
+  const dustColors  = ['#c4c8ff', '#d0ccff', '#b8c8ff', '#e0dcff'];
+  const brightColors = ['#ffffff', '#eef4ff', '#fff8f0', '#d0e8ff'];
 
   for (let seg = 0; seg < POSITIONS.length - 1; seg++) {
     const [x1, y1] = POSITIONS[seg];
     const [x2, y2] = POSITIONS[seg + 1];
-    const dx = x2 - x1;
-    const dy = y2 - y1;
+    const dx = x2 - x1, dy = y2 - y1;
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    // Perpendicular direction for scatter
-    const nx = -dy / len;
-    const ny =  dx / len;
+    const nx = -dy / len, ny = dx / len;
 
-    for (let j = 0; j < 80; j++) {
-      const t       = Math.random();
-      const scatter = (Math.random() - 0.5) * 8; // width of the band
+    // Dust: many tiny faint particles
+    for (let j = 0; j < 55; j++) {
+      const t = Math.random(), s = (Math.random() - 0.5) * 8;
       stars.push({
-        x:       x1 + dx * t + nx * scatter,
-        y:       y1 + dy * t + ny * scatter,
-        r:       Math.random() * 0.55 + 0.08,
-        opacity: Math.random() * 0.75 + 0.1,
-        color:   colors[Math.floor(Math.random() * colors.length)],
+        x: x1 + dx * t + nx * s, y: y1 + dy * t + ny * s,
+        r: Math.random() * 0.13 + 0.04,
+        opacity: Math.random() * 0.25 + 0.08,
+        color: dustColors[Math.floor(Math.random() * dustColors.length)],
+        bright: false,
+      });
+    }
+    // Mid: moderate stars, tighter band
+    for (let j = 0; j < 18; j++) {
+      const t = Math.random(), s = (Math.random() - 0.5) * 5;
+      stars.push({
+        x: x1 + dx * t + nx * s, y: y1 + dy * t + ny * s,
+        r: Math.random() * 0.20 + 0.12,
+        opacity: Math.random() * 0.30 + 0.30,
+        color: dustColors[Math.floor(Math.random() * dustColors.length)],
+        bright: false,
+      });
+    }
+    // Bright: few larger glowing stars
+    for (let j = 0; j < 5; j++) {
+      const t = Math.random(), s = (Math.random() - 0.5) * 3;
+      stars.push({
+        x: x1 + dx * t + nx * s, y: y1 + dy * t + ny * s,
+        r: Math.random() * 0.24 + 0.22,
+        opacity: Math.random() * 0.30 + 0.60,
+        color: brightColors[Math.floor(Math.random() * brightColors.length)],
+        bright: true,
       });
     }
   }
@@ -161,37 +194,42 @@ export default function MainMenu() {
           className={styles.pathSvg}
         >
           <defs>
-            <filter id="mwGlow" x="-80%" y="-80%" width="260%" height="260%">
-              <feGaussianBlur stdDeviation="1.4" result="blur" />
+            <filter id="brightStar" x="-300%" y="-300%" width="700%" height="700%">
+              <feGaussianBlur stdDeviation="0.22" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="routeGlow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="0.35" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
 
-          {/* Nebula glow — wide purple/violet outer band */}
-          <polyline points={SVG_POINTS} fill="none" stroke="rgba(120,80,200,0.07)"  strokeWidth="14" strokeLinecap="round" />
-          {/* Blue mid band */}
-          <polyline points={SVG_POINTS} fill="none" stroke="rgba(80,130,220,0.09)"  strokeWidth="8"  strokeLinecap="round" />
-          {/* White-blue inner band */}
-          <polyline points={SVG_POINTS} fill="none" stroke="rgba(180,210,255,0.07)" strokeWidth="4"  strokeLinecap="round" />
-
-          {/* Milky Way stars scattered along the band */}
-          {MILKY_WAY_STARS.map((s, i) => (
-            <circle
-              key={i}
-              cx={s.x} cy={s.y} r={s.r}
-              fill={s.color}
-              opacity={s.opacity}
-            />
+          {/* Dust + mid stars — no filter for performance */}
+          {MILKY_WAY_STARS.filter(s => !s.bright).map((s, i) => (
+            <circle key={i} cx={s.x} cy={s.y} r={s.r} fill={s.color} opacity={s.opacity} />
           ))}
 
-          {/* Bright core thread */}
+          {/* Bright stars with soft glow */}
+          {MILKY_WAY_STARS.filter(s => s.bright).map((s, i) => (
+            <circle key={`b${i}`} cx={s.x} cy={s.y} r={s.r} fill={s.color} opacity={s.opacity} filter="url(#brightStar)" />
+          ))}
+
+          {/* Route line — thin dashed, screen-space stroke so it stays crisp */}
           <polyline
             points={SVG_POINTS}
             fill="none"
-            stroke="rgba(220,235,255,0.28)"
-            strokeWidth="0.4"
-            filter="url(#mwGlow)"
+            stroke="rgba(160,200,255,0.22)"
+            strokeWidth="1"
+            strokeDasharray="5 7"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            filter="url(#routeGlow)"
           />
+
+          {/* Waypoint dots at 1/3 and 2/3 of each segment */}
+          {WAYPOINTS.map((wp, i) => (
+            <circle key={`wp${i}`} cx={wp.x} cy={wp.y} r="0.5" fill="rgba(160,200,255,0.35)" />
+          ))}
         </svg>
 
         {/* Planets */}
@@ -239,7 +277,7 @@ export default function MainMenu() {
           className={`${styles.rocket}${launching ? ` ${styles.rocketLaunch}` : ''}`}
           style={{
             left: `${rx}%`,
-            top:  `${ry}%`,
+            top:  `calc(${ry}% - 25px)`,
             transition: isDragging
               ? 'none'
               : 'left 0.65s cubic-bezier(0.34,1.56,0.64,1), top 0.65s cubic-bezier(0.34,1.56,0.64,1)',
